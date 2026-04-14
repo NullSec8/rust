@@ -1,0 +1,80 @@
+💻 Ideja: Website për shitje/blerje PC & pjesë
+🔹 Emri (shembull)
+
+TechTregu (ose cilindo që zgjodhe)
+
+🔹 1. Qëllimi i versionit të parë
+
+Një faqe shumë e thjeshtë ku:
+
+njerëzit regjistrohen
+postojnë produkte (PC, GPU, RAM, etj.)
+të tjerët i shohin dhe i kontaktojnë
+
+👉 Pa pagesa online në fillim (thjesht komunikim)
+
+🔹 2. Çfarë përmban faqja
+🏠 Home Page
+Lista e produkteve të fundit
+Kategori:
+PC të gatshëm
+Pjesë (GPU, CPU, RAM, SSD)
+Search bar (kërkim)
+👤 User Account
+Regjistrim / Login
+Profili i përdoruesit
+Lista e produkteve që ka postuar
+➕ Posto produkt
+
+Kur dikush shet diçka:
+
+Titulli (p.sh. “RTX 3060 12GB”)
+Çmimi
+Përshkrimi
+Foto
+Kategoria
+Lokacioni
+🔍 Shiko produktin
+Foto
+Përshkrim
+Çmimi
+Emri i shitësit
+Buton: “Kontakto shitësin”
+💬 Kontakt
+Fillimisht:
+👉 vetëm numër telefoni ose Instagram
+(më e lehtë se chat sistem)
+🔹 3. Rregulla bazë
+Nuk lejohen scam
+Produktet duhet të jenë reale
+Mundësi “Report” për postime të dyshimta
+🔹 4. Si funksionon (flow)
+User hyn në faqe
+Sheh produkte
+Ose regjistrohet
+Poston produkt
+Dikush tjetër e kontakton
+
+👉 Shumë e thjeshtë, si një mini marketplace
+
+🔹 5. Çfarë NUK duhet në fillim
+
+❌ Pagesa online
+❌ Delivery sistem
+❌ Rating kompleks
+❌ App mobile
+
+👉 Këto i shton më vonë
+
+🔹 6. Qëllimi kryesor
+Ta nxjerrësh shpejt online
+Ta testosh me njerëz real
+Të shohësh a ka interes
+💡 Ide bonus (shumë e rëndësishme)
+
+Në fillim:
+👉 promovoje në:
+
+Facebook grupe (PC / Gaming)
+Instagram
+TikTok
