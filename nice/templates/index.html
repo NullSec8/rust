@@ -1,0 +1,635 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>scubydoo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="https://media.discordapp.net/attachments/1160427915645816923/1427021102869254306/81qfkqAAAABklEQVQDAIysGTPlXw7nAAAAAElFTkSuQmCC.png?ex=68ed5877&is=68ec06f7&hm=640374e5849b5d1a6f1c4fbca7d7bf035c65985ec2cda127265acd40389b55f5&=&format=webp&quality=lossless" />
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      height: 100vh; width: 100vw;
+      font-family: monospace;
+      background: #c0c0c0;
+      color: black;
+      background-image: url(https://imgs.search.brave.com/ujNO5aDzPsqy8UHWNvHRnpEmGTVyDPzkf5S_mR_3hx4/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93YWxs/cGFwZXJzLmNvbS9p/bWFnZXMvZmVhdHVy/ZWQvaGVsbG8ta2l0/dHktYWVzdGhldGlj/LW51eDhwMGswZXM0/YzV0Z24uanBn);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.4s ease, background-image 0.8s ease, color 0.4s ease;
+    }
+
+    body.dark-mode {
+      background-color: #1e1e1e;
+      color: white;
+      background-image: url('https://imgs.search.brave.com/lPh6m1Pg44mvmXmdiDmGp1KZHur19hQ_5oQ1JnNpN3U/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzLzQ1LzFl/LzM1LzQ1MWUzNWY0/Y2U2NWU1NjNiY2Jj/OTA3ZjQ0ZjZjY2Ux/LmpwZw');
+    }
+
+    #chat {
+      background: rgba(255, 255, 255, 0.5);
+      border: 2px solid #000000;
+      padding: 10px;
+      margin: 10px;
+      flex-grow: 1;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      border-radius: 4px;
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+
+    body.dark-mode #chat {
+      background: rgba(0, 0, 0, 0.4);
+      border-color: #ffffff;
+    }
+
+    p {
+      margin: 5px 0;
+      word-wrap: break-word;
+    }
+
+    img.chat-image {
+      max-width: 200px;
+      display: block;
+      margin-top: 5px;
+      border: 1px solid #000;
+      border-radius: 4px;
+    }
+
+    #typingIndicator {
+      font-style: italic;
+      color: #666;
+      padding: 4px 14px;
+      font-size: 0.9em;
+      min-height: 20px;
+      margin: 0 10px;
+    }
+
+    body.dark-mode #typingIndicator {
+      color: #aaa;
+    }
+
+    #msgInput {
+      font-family: monospace;
+      font-size: 16px;
+      padding: 10px;
+      padding-right: 40px;
+      box-sizing: border-box;
+      border: 2px solid #acacac;
+      border-radius: 4px;
+      outline: none;
+      width: 100%;
+      background-color: white;
+      transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+    }
+
+    #msgInput:focus {
+      border-color: #004080;
+      box-shadow: 0 0 5px #004080;
+    }
+
+    body.dark-mode #msgInput {
+      background-color: #2b2b2b;
+      color: white;
+      border-color: #555;
+    }
+
+    .input-container {
+      position: relative;
+      margin: 0 10px 10px 10px;
+      width: calc(100% - 20px);
+    }
+
+    label[for="imageInput"] {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: white;
+      border: 1.5px solid #999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s, border-color 0.2s;
+      user-select: none;
+      color: #555;
+    }
+
+    label[for="imageInput"]:hover {
+      background-color: #f0f0f0;
+      border-color: #666;
+    }
+
+    body.dark-mode label[for="imageInput"] {
+      background: #2b2b2b;
+      border-color: #666;
+      color: #ddd;
+    }
+
+    #imageInput {
+      display: none;
+    }
+
+    #musicToggle {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      background: rgb(68, 68, 70);
+      width: 40px;
+      height: 80px;
+      border-radius: 8px 0 0 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      box-shadow: 0 0 10px rgba(82, 82, 85, 0.6);
+      transition: background-color 0.3s ease;
+      z-index: 9999;
+    }
+
+    #musicToggle:hover {
+      background-color: #004080;
+    }
+
+    #musicToggle img {
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+    }
+
+    #musicBox {
+      position: fixed;
+      top: 50%;
+      right: -320px;
+      transform: translateY(-50%);
+      width: 300px;
+      height: 90px;
+      background: rgba(255,255,255,0.85);
+      border: 2px solid #000080;
+      border-radius: 8px 0 0 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.25);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      transition: right 0.4s ease;
+      z-index: 9998;
+    }
+
+    #musicBox.open {
+      right: 40px;
+    }
+
+    body.dark-mode #musicBox {
+      background: rgba(30, 30, 30, 0.85);
+      border-color: #ccc;
+    }
+
+    #darkModeToggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 10000;
+      background-color: white;
+      color: #333;
+      border: 2px solid #999;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    #darkModeToggle:hover {
+      background-color: #f0f0f0;
+      border-color: #666;
+    }
+
+    body.dark-mode #darkModeToggle {
+      background-color: #2b2b2b;
+      color: #eee;
+      border-color: #555;
+    }
+
+    @media (max-width: 600px) {
+      #msgInput {
+        font-size: 14px;
+        padding: 8px;
+        padding-right: 38px;
+      }
+      #chat {
+        margin: 8px;
+      }
+      .input-container {
+        margin: 0 8px 8px 8px;
+        width: calc(100% - 16px);
+      }
+    }
+
+    @media (max-width: 400px) {
+      #musicBox {
+        width: 280px;
+        height: 90px;
+        padding: 8px;
+      }
+      #musicBox iframe {
+        width: 280px !important;
+        height: 80px !important;
+      }
+      #musicToggle {
+        height: 70px;
+        width: 36px;
+    
+      }
+
+      /* the counter of live userser on the website */
+      #liveUsersCounter {
+        display: none;
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 14px;
+        z-index: 10000;
+      }
+    }
+#usernameOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.6); /* slightly transparent for effect */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.username-box {
+  background: rgba(255, 255, 255, 0.85);
+  color: black;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  width: 320px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  font-family: monospace;
+  border: 2px solid #acacac;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+body.dark-mode .username-box {
+  background: rgba(30, 30, 30, 0.9);
+  color: white;
+  border-color: #555;
+}
+
+.username-box input {
+  width: 100%;
+  padding: 10px;
+  margin: 12px 0;
+  font-family: monospace;
+  border: 2px solid #acacac;
+  border-radius: 6px;
+  outline: none;
+  background-color: white;
+  color: black;
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+body.dark-mode .username-box input {
+  background-color: #2b2b2b;
+  color: white;
+  border-color: #555;
+}
+
+.username-box button {
+  background: #ff69b4; /* hotpink button to match your music link accent */
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.username-box button:hover {
+  background: #ff85c1; /* slightly lighter hotpink on hover */
+}
+
+  </style>
+</head>
+<body>
+<a href="paint.html" style="
+  position: fixed;
+  top: 10px;
+  right: 120px;
+  background: #ff85c1;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  z-index: 9999;
+  box-shadow: 0 0 8px #ff85c1;
+  transition: background 0.3s ease;
+">
+   Paint Page
+</a>
+
+
+
+<div id="usernameOverlay">
+  <div class="username-box">
+    <h2>Welcome to ScubyDoo</h2>
+    <p>Enter your username to join the chat</p>
+    <input id="usernameInput" type="text" placeholder="Your name..." maxlength="20" />
+    <button id="enterChatBtn">Enter Chat</button>
+  </div>
+</div>
+
+  <audio id="messageSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
+
+  <button id="darkModeToggle" title="Toggle Dark Mode">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/>
+    </svg>
+  </button>
+
+ 
+
+  <div id="musicToggle" title="Toggle Music Player" aria-label="Toggle music player" role="button" tabindex="0" aria-pressed="false">
+    <img src="https://imgs.search.brave.com/XXVED8Ixpc0VsrwEohpnbnPG2nhlYie4Yb9N9WX6eWs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzA3Lzg0Lzg4Lzk0/LzM2MF9GXzc4NDg4/OTQ3NF9CcjdKY1c1/RVU0WUg3T0NhTVNw/TjU2WllWNUJWTVlG/dy5qcGc" alt="Toggle Music Player" />
+  </div>
+
+  <div id="musicBox" aria-hidden="true">
+    <iframe width="280" height="80" src="https://www.youtube.com/embed/e0beErwinDc" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </div>
+
+  <div id="chat"></div>
+  <div id="typingIndicator"></div>
+
+  <div class="input-container">
+    <input id="msgInput" placeholder="Type message and press Enter" autocomplete="off" />
+    <label for="imageInput" aria-label="Upload Image" role="button" tabindex="0">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:18px; height:18px; color:#555;">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h2l2-3h10l2 3h2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+        <circle cx="12" cy="13" r="3" stroke="currentColor" stroke-width="2" />
+      </svg>
+    </label>
+    <input type="file" id="imageInput" accept="image/*" />
+  </div>
+
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+  const socket = io();
+  const chat = document.getElementById('chat');
+  const msgInput = document.getElementById('msgInput');
+  const imageInput = document.getElementById('imageInput');
+  const messageSound = document.getElementById('messageSound');
+  const typingIndicator = document.getElementById('typingIndicator');
+
+  let typingUsers = new Set();
+  let typingTimeouts = {};
+  let audioUnlocked = false;
+  let name = "";
+
+  // --- Username overlay setup ---
+  const overlay = document.getElementById("usernameOverlay");
+  const usernameInput = document.getElementById("usernameInput");
+  const enterBtn = document.getElementById("enterChatBtn");
+
+  function sanitizeName(name) {
+    if (name.length > 20) name = name.slice(0, 20);
+    return name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  enterBtn.addEventListener("click", () => {
+    const entered = usernameInput.value.trim();
+    if (!entered) return;
+    name = sanitizeName(entered);
+    overlay.style.display = "none";
+  });
+
+  // --- Add text message ---
+  function addTextMessage(msg, isOwn = false) {
+    const p = document.createElement('p');
+    if (isOwn) {
+      p.innerHTML = `<strong>You:</strong> ${msg.split(": ").slice(1).join(": ")}`;
+    } else {
+      const sender = msg.split(":")[0];
+      const text = msg.split(": ").slice(1).join(": ");
+      p.textContent = `${sender}: ${text}`;
+    }
+    chat.appendChild(p);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  // --- Add image message ---
+  function addImageMessage(imgData, sender) {
+    const p = document.createElement('p');
+    const img = document.createElement('img');
+    img.src = imgData;
+    img.classList.add('chat-image');
+    p.innerHTML = `<strong>${sender}:</strong> `;
+    p.appendChild(img);
+    chat.appendChild(p);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function unlockAudio() {
+    if (!audioUnlocked) {
+      messageSound.play().catch(() => {});
+      messageSound.pause();
+      messageSound.currentTime = 0;
+      audioUnlocked = true;
+    }
+  }
+
+  document.body.addEventListener('click', unlockAudio, { once: true });
+  document.body.addEventListener('keydown', unlockAudio, { once: true });
+
+  function playMessageSound() {
+    if (!audioUnlocked) return;
+    messageSound.pause();
+    messageSound.currentTime = 0;
+    messageSound.play().catch(e => console.warn('Audio play failed:', e));
+  }
+
+  function updateTypingIndicator() {
+    if (typingUsers.size === 0) {
+      typingIndicator.textContent = '';
+    } else if (typingUsers.size === 1) {
+      const [user] = typingUsers;
+      typingIndicator.textContent = `${user} is typing...`;
+    } else {
+      typingIndicator.textContent = `${Array.from(typingUsers).join(', ')} are typing...`;
+    }
+  }
+
+  socket.on('message', msg => {
+    if (!name) return; // prevent receiving messages before username is set
+
+    if (typeof msg === 'string') {
+      const isOwnMessage = msg.startsWith(name + ':');
+      if (!isOwnMessage) {
+        addTextMessage(msg);
+        playMessageSound();
+      }
+    } else if (msg.type === 'image') {
+      if (msg.name !== name) {
+        addImageMessage(msg.data, msg.name || 'Unknown');
+        playMessageSound();
+      }
+    }
+  });
+
+  socket.on('typing', (typingUser) => {
+    if (typingUser === name) return;
+    typingUsers.add(typingUser);
+    updateTypingIndicator();
+
+    if (typingTimeouts[typingUser]) clearTimeout(typingTimeouts[typingUser]);
+
+    typingTimeouts[typingUser] = setTimeout(() => {
+      typingUsers.delete(typingUser);
+      updateTypingIndicator();
+    }, 2000);
+  });
+
+  msgInput.addEventListener('input', () => {
+    if (name) socket.emit('typing', name);
+  });
+
+  msgInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && name) {
+      const text = msgInput.value.trim();
+      if (!text) return;
+      const fullMsg = `${name}: ${text}`;
+      socket.emit('message', fullMsg);
+      addTextMessage(fullMsg, true);
+      msgInput.value = '';
+    }
+  });
+
+  imageInput.addEventListener('change', e => {
+    if (!name) return;
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const imageData = evt.target.result;
+        socket.emit('message', {
+          type: 'image',
+          data: imageData,
+          name: name
+        });
+        addImageMessage(imageData, name);
+      };
+      reader.readAsDataURL(file);
+      imageInput.value = '';
+    }
+  });
+
+  // --- Music toggle ---
+  const musicToggle = document.getElementById('musicToggle');
+  const musicBox = document.getElementById('musicBox');
+
+  function toggleMusicBox() {
+    const isOpen = musicBox.classList.toggle('open');
+    musicBox.setAttribute('aria-hidden', !isOpen);
+    musicToggle.style.backgroundColor = isOpen ? '#004080' : 'rgb(68, 68, 70)';
+    musicToggle.setAttribute('aria-pressed', isOpen);
+  }
+
+  musicToggle.addEventListener('click', toggleMusicBox);
+  musicToggle.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault(); s
+      toggleMusicBox();
+    }
+  });
+
+  // --- Dark mode toggle ---
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  darkModeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+  });
+});
+
+ // Call this after the page loads and after user is logged-in / overlay is dismissed.
+  function sendPreciseLocationToServer(lat, lon, accuracy) {
+    fetch('/report_location', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'same-origin', // ensure cookies/session are sent
+      body: JSON.stringify({ lat: lat, lon: lon, accuracy: accuracy || 0 })
+    }).then(r => {
+      if (!r.ok) console.warn('Location report failed', r.status);
+      return r.json().catch(()=>{});
+    }).then(data => {
+      // optional: handle server response
+      // console.log('Location report response', data);
+    }).catch(err => console.error('Error reporting location:', err));
+  }
+
+  // Ask browser for geolocation with user consent
+  function requestAndSendLocation() {
+    if (!navigator.geolocation) {
+      console.warn('Geolocation not supported.');
+      return;
+    }
+    // options: highAccuracy true requests GPS if available (may be slower/battery)
+    navigator.geolocation.getCurrentPosition(function(position) {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      const accuracy = position.coords.accuracy; // meters
+      sendPreciseLocationToServer(lat, lon, accuracy);
+    }, function(err) {
+      console.warn('Geolocation denied or failed:', err);
+    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+  }
+
+  // Call requestAndSendLocation after the user enters their username / accepts
+  // e.g. when you hide your username overlay, call requestAndSendLocation()
+  document.addEventListener('DOMContentLoaded', () => {
+    const enterBtn = document.getElementById('enterChatBtn');
+    if (enterBtn) {
+      enterBtn.addEventListener('click', () => {
+        // Small delay to allow session/cookie to be set if needed
+        setTimeout(() => requestAndSendLocation(), 300);
+      });
+    }
+  });
+
+  </script>
+</body>
+</html>

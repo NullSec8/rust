@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>File Upload</title>
+  <link rel="icon" type="image/x-icon" href="https://media.discordapp.net/attachments/1292273732575952925/1427597633131909231/1cEVAE5iKw6OarkCkCioAioAgoAoqAIqAIjAYBJWqjwV1rVQQUAUVAEVAEFAFFYFEElKgtCpHeoAgoAoqAIqAIKAKKwGgQUKI2Gty1VkVAEVAEFAFFQBFQBBZFQInaohDpDYqAIqAIKAKKgCKgCIwGASVqo8Fda1UEFAFFQBFQBBQBRWBRBJSoLQqR3qAIKAKKgCKgCCgCisBoEFCiNhrctVZFQBFQBBQBRUARUAQWRUCJ2qIQ6Q2KgCKgCCgCioAioAiMBgElaqPBXWtVBBQBRUARUAQUAUVgUQSUqC0Kkd6gCCgCioAioAgoAorAaBBQojYa3LVWRUARUAQUAUVAEVAEFkVAidqiEOkNioAioAgoAoqAIqAIjAYBJWqjwV1rVQQUAUVAEVAEFAFFYFEElKgtCpHeoAgoAoqAIqAIKAKKwGgQUKI2Gty1VkVAEVAEFAFFQBFQBBZFQInaohDpDYqAIqAIKAKKgCKgCIwGgf8PZ6aGqZpvbYAAAA..png">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8f9fa;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    #drop-zone {
+      width: 100%;
+      max-width: 400px;
+      height: 220px;  
+      border: 3px dashed #aaa;
+      border-radius: 12px;
+      background-color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #888;
+      font-size: 16px;
+      transition: background-color 0.3s, border-color 0.3s;
+      text-align: center;
+      padding: 20px;
+      cursor: pointer;
+    }
+
+    #drop-zone.dragover {
+      border-color: #007bff;
+      background-color: #e9f5ff;
+      color: #007bff;
+    }
+
+    #message {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    #message.success { color: green; }
+    #message.error { color: red; }
+
+    #file-list {
+      margin-top: 30px;
+      width: 100%;
+      max-width: 400px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+    }
+
+    #file-list h2 {
+      font-size: 18px;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    #file-list ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    #file-list li {
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    #file-list a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    #file-list a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 500px) {
+      #drop-zone {
+        height: 180px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Drag & Drop File Upload</h1>
+  <div id="drop-zone">Drop your file here or click to select</div>
+  <div id="message"></div>
+  <div id="file-list">
+    <h2>Uploaded Files</h2>
+    <ul id="files-ul"></ul>
+  </div>
+
+  <input type="file" id="fileInput" style="display:none;" />
+
+  <script>
+    const dropZone = document.getElementById('drop-zone');
+    const messageDiv = document.getElementById('message');
+    const fileInput = document.getElementById('fileInput');
+    const filesUl = document.getElementById('files-ul');
+
+    const baseURL = window.location.origin; // ✅ dynamically match backend host
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        uploadFile(fileInput.files[0]);
+      }
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        uploadFile(files[0]);
+      }
+    });
+
+    function uploadFile(file) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      messageDiv.textContent = 'Uploading...';
+      messageDiv.className = '';
+
+      fetch(`${baseURL}/upload`, {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.filename) {
+          messageDiv.className = 'success';
+          messageDiv.innerHTML = `
+            ✅ <strong>${file.name}</strong> uploaded!<br>
+            <a href="${baseURL}/uploads/${encodeURIComponent(result.filename)}" target="_blank">
+              Open File
+            </a>
+          `;
+          loadFileList();
+        } else {
+          messageDiv.className = 'error';
+          messageDiv.textContent = result.error || 'Upload failed.';
+        }
+      })
+      .catch(error => {
+        console.error('Error uploading file:', error);
+        messageDiv.className = 'error';
+        messageDiv.textContent = 'Upload error.';
+      });
+    }
+
+    function loadFileList() {
+      fetch(`${baseURL}/files`)
+        .then(res => res.json())
+        .then(data => {
+          filesUl.innerHTML = '';
+          if (data.files && data.files.length > 0) {
+            data.files.forEach(file => {
+              const li = document.createElement('li');
+              li.innerHTML = `<a href="${baseURL}/uploads/${encodeURIComponent(file)}" target="_blank">${file}</a>`;
+              filesUl.appendChild(li);
+            });
+          } else {
+            filesUl.innerHTML = '<li>No files uploaded yet.</li>';
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching file list:', err);
+        });
+    }
+
+    window.addEventListener('DOMContentLoaded', loadFileList);
+  </script>
+
+</body>
+</html>
+  

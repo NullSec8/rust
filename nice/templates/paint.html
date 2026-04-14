@@ -1,0 +1,296 @@
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScubyPaint Enhanced (Responsive)</title>
+  <link rel="icon" type="image/png" href="https://media.discordapp.net/attachments/1160427915645816923/1427021102869254306/81qfkqAAAABklEQVQDAIysGTPlXw7nAAAAAElFTkSuQmCC.png" />
+  <style>
+  html, body {
+    margin: 0; padding: 0;
+    font-family: monospace;
+    background: #c0c0c0;
+    color: black;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+  body.dark-mode { background: #1e1e1e; color: white; }
+
+  #toolbar {
+    display: flex; flex-wrap: wrap;
+    background: #e0e0e0; padding: 8px; gap: 8px;
+    border-bottom: 2px solid #000;
+  }
+  body.dark-mode #toolbar { background: #2b2b2b; border-color: #555; }
+
+  button, input[type=color], select {
+    font-family: monospace; font-size: 14px;
+    padding: 6px 8px;
+    border: 2px solid #999; border-radius: 4px;
+    background: white; cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+  body.dark-mode button, body.dark-mode input[type=color], body.dark-mode select {
+    background: #2b2b2b; color: white; border-color: #555;
+  }
+  button:hover { background-color: #f0f0f0; }
+  body.dark-mode button:hover { background-color: #444; }
+
+  #canvasContainer { flex-grow: 1; position: relative; }
+  canvas { width: 100%; height: 100%; display: block; cursor: crosshair; background: white; }
+  body.dark-mode canvas { background: #2b2b2b; }
+
+  #darkModeToggle {
+    position: fixed; top: 10px; right: 10px; z-index: 10000;
+    background-color: white; color: #333; border: 2px solid #999;
+    border-radius: 50%; width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+  body.dark-mode #darkModeToggle { background-color: #2b2b2b; color: #eee; border-color: #555; }
+  </style>
+  </head>
+  <body>
+
+  <div id="toolbar">
+    <button data-tool="pencil">Pencil</button>
+    <button data-tool="eraser">Eraser</button>
+    <button data-tool="line">Line</button>
+    <button data-tool="rect">Rectangle</button>
+    <button data-tool="circle">Circle</button>
+    <button data-tool="text">Text</button>
+    <label>Size:
+      <select id="sizeSelect">
+        <option value="2">2px</option>
+        <option value="4">4px</option>
+        <option value="6" selected>6px</option>
+        <option value="10">10px</option>
+        <option value="14">14px</option>
+      </select>
+    </label>
+    <input type="color" id="colorPicker" value="#000000">
+    <button id="undoBtn">Undo</button>
+    <button id="redoBtn">Redo</button>
+    <button id="clearBtn">Clear</button>
+    <button id="saveBtn">Save</button>
+  </div>
+
+  <div id="canvasContainer">
+    <canvas id="paintCanvas"></canvas>
+  </div>
+
+  <button id="darkModeToggle">🌓</button>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+  const canvas = document.getElementById('paintCanvas');
+  const ctx = canvas.getContext('2d');
+  const colorPicker = document.getElementById('colorPicker');
+  const sizeSelect = document.getElementById('sizeSelect');
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  const undoBtn = document.getElementById('undoBtn');
+  const redoBtn = document.getElementById('redoBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const saveBtn = document.getElementById('saveBtn');
+
+  let painting = false;
+  let startX = 0, startY = 0;
+  let currentTool = 'pencil';
+  let currentColor = colorPicker.value;
+  let currentSize = parseInt(sizeSelect.value);
+  let textInputActive = false;
+  let history = [], redoHistory = [];
+
+  const paintSocket = io('/paint');
+
+  // --- Responsive Canvas ---
+  function resizeCanvas() {
+    const toolbarHeight = document.getElementById('toolbar').offsetHeight;
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    tempCanvas.getContext('2d').drawImage(canvas, 0, 0);
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - toolbarHeight;
+
+    ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width, tempCanvas.height, 0, 0, canvas.width, canvas.height);
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // --- History ---
+  function saveHistory() {
+    const img = new Image();
+    img.src = canvas.toDataURL('image/webp', 0.8);
+    history.push(img);
+    if (history.length > 50) history.shift();
+    redoHistory = [];
+  }
+
+  // --- Drawing ---
+  function getCursorPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return [e.clientX - rect.left, e.clientY - rect.top];
+  }
+
+  function startPosition(e) {
+    const [x, y] = getCursorPos(e);
+    startX = x; startY = y;
+
+    if (currentTool === 'text' && !textInputActive) {
+      textInputActive = true;
+      const text = prompt("Enter text:");
+      if (text) {
+        ctx.fillStyle = currentColor;
+        ctx.font = `${currentSize * 4}px monospace`;
+        ctx.fillText(text, startX, startY);
+        saveHistory();
+        paintSocket.emit('drawText', {x: startX, y: startY, text, color: currentColor, size: currentSize});
+      }
+      textInputActive = false;
+      return;
+    }
+
+    painting = true;
+    if (['pencil','eraser'].includes(currentTool)) draw(e);
+  }
+
+  function endPosition(e) {
+    if (!painting) return;
+    painting = false;
+    const [x, y] = getCursorPos(e);
+
+    if (['line','rect','circle'].includes(currentTool)) {
+      ctx.strokeStyle = currentColor;
+      ctx.lineWidth = currentSize;
+      ctx.lineCap = 'round';
+      if (currentTool==='line') {
+        ctx.beginPath(); ctx.moveTo(startX,startY); ctx.lineTo(x,y); ctx.stroke();
+        paintSocket.emit('drawShape', {tool:'line', color:currentColor, size:currentSize, from:[startX,startY], to:[x,y]});
+      } else if (currentTool==='rect') {
+        ctx.strokeRect(startX,startY,x-startX,y-startY);
+        paintSocket.emit('drawShape', {tool:'rect', color:currentColor, size:currentSize, from:[startX,startY], to:[x,y]});
+      } else if (currentTool==='circle') {
+        const radius = Math.sqrt((x-startX)**2 + (y-startY)**2);
+        ctx.beginPath(); ctx.arc(startX,startY,radius,0,Math.PI*2); ctx.stroke();
+        paintSocket.emit('drawShape', {tool:'circle', color:currentColor, size:currentSize, from:[startX,startY], radius});
+      }
+    }
+    ctx.beginPath();
+    saveHistory();
+  }
+
+  function draw(e) {
+    if (!painting || ['line','rect','circle','text'].includes(currentTool)) return;
+    const [x, y] = getCursorPos(e);
+
+    const strokeColor = (currentTool==='eraser') 
+      ? (document.body.classList.contains('dark-mode')?'#2b2b2b':'#ffffff')
+      : currentColor;
+
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = currentSize;
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+
+    paintSocket.emit('draw', {tool: currentTool, color: currentColor, size: currentSize, from:[startX,startY], to:[x,y]});
+
+    startX = x;
+    startY = y;
+  }
+
+  // --- Undo / Redo ---
+  undoBtn.addEventListener('click', () => {
+    if (history.length>1) {
+      redoHistory.push(history.pop());
+      const img = history[history.length-1];
+      img.onload = () => ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    } else if (history.length===1) ctx.clearRect(0,0,canvas.width,canvas.height);
+  });
+
+  redoBtn.addEventListener('click', () => {
+    if (redoHistory.length>0) {
+      const img = redoHistory.pop();
+      img.onload = () => ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      history.push(img);
+    }
+  });
+
+  // --- Toolbar ---
+  document.getElementById('toolbar').addEventListener('click', e => {
+    if (e.target.dataset.tool) currentTool = e.target.dataset.tool;
+  });
+  colorPicker.addEventListener('change', e => currentColor=e.target.value);
+  sizeSelect.addEventListener('change', e => currentSize=parseInt(e.target.value));
+
+  clearBtn.addEventListener('click', () => {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    saveHistory();
+    paintSocket.emit('clear');
+  });
+
+  darkModeToggle.addEventListener('click', () => document.body.classList.toggle('dark-mode'));
+
+  saveBtn.addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = 'painting.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+
+  // --- Keyboard Shortcuts ---
+  document.addEventListener('keydown', e => {
+    if (!e.ctrlKey) return;
+    const key = e.key.toLowerCase();
+    if (key==='z'){ e.preventDefault(); undoBtn.click(); }
+    else if (key==='y'){ e.preventDefault(); redoBtn.click(); }
+    else if (key==='c'){ e.preventDefault(); clearBtn.click(); }
+    else if (key==='s'){ e.preventDefault(); saveBtn.click(); }
+  });
+
+  // --- Canvas Events ---
+  canvas.addEventListener('mousedown', startPosition);
+  canvas.addEventListener('mouseup', endPosition);
+  canvas.addEventListener('mousemove', draw);
+
+  // --- Socket Handlers ---
+  paintSocket.on('draw', data => {
+    const strokeColor = (data.tool==='eraser') ? (document.body.classList.contains('dark-mode')?'#2b2b2b':'#ffffff') : data.color;
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = data.size;
+    ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(data.from[0],data.from[1]);
+    ctx.lineTo(data.to[0],data.to[1]);
+    ctx.stroke();
+  });
+
+  paintSocket.on('drawShape', data => {
+    ctx.strokeStyle=data.color; ctx.lineWidth=data.size; ctx.lineCap='round';
+    if(data.tool==='line'){ ctx.beginPath(); ctx.moveTo(...data.from); ctx.lineTo(...data.to); ctx.stroke(); }
+    else if(data.tool==='rect'){ ctx.strokeRect(data.from[0],data.from[1],data.to[0]-data.from[0],data.to[1]-data.from[1]); }
+    else if(data.tool==='circle'){ ctx.beginPath(); ctx.arc(data.from[0],data.from[1],data.radius,0,Math.PI*2); ctx.stroke(); }
+  });
+
+  paintSocket.on('drawText', data => {
+    ctx.fillStyle=data.color; ctx.font=`${data.size*4}px monospace`;
+    ctx.fillText(data.text,data.x,data.y);
+  });
+
+  paintSocket.on('clear', () => ctx.clearRect(0,0,canvas.width,canvas.height));
+
+  // --- Initial History ---
+  saveHistory();
+  </script>
+
+  </body>
+  </html>
